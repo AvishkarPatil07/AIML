@@ -1,0 +1,28 @@
+
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+from sklearn.linear_model import LinearRegression
+
+# Load the dataset
+data = pd.read_csv("C:/Users/Avishkar/Downloads/Salary_Data.csv")
+
+# Split the data into independent (x) and dependent (y) variables
+x = data.iloc[:, :-1]
+y = data.iloc[:, -1]
+
+# Fit a linear regression model
+model = LinearRegression()
+model.fit(x, y)
+
+# Plot the data and the regression line
+sns.scatterplot(data=data, x=x.columns[0], y=y.name)
+sns.lineplot(x=x.iloc[:,0], y=model.predict(x), color='red')
+
+# Set the plot title and axes labels
+plt.title('Simple Linear Regression')
+plt.xlabel('X')
+plt.ylabel('Y')
+
+# Show the plot
+plt.show()
