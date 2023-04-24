@@ -1,0 +1,298 @@
+-----------------------------------------------------exp2  linear regression-----------------------------------------
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+from sklearn.linear_model import LinearRegression
+
+# Load the dataset
+data = pd.read_csv("C:/Users/Avishkar/Downloads/Salary_Data.csv")
+
+# Split the data into independent (x) and dependent (y) variables
+x = data.iloc[:, :-1]
+y = data.iloc[:, -1]
+
+# Fit a linear regression model
+model = LinearRegression()
+model.fit(x, y)
+
+# Plot the data and the regression line
+sns.scatterplot(data=data, x=x.columns[0], y=y.name)
+sns.lineplot(x=x.iloc[:,0], y=model.predict(x), color='red')
+
+# Set the plot title and axes labels
+plt.title('Simple Linear Regression')
+plt.xlabel('X')
+plt.ylabel('Y')
+
+# Show the plot
+plt.show()
+
+----------------------------------------------------------------------exp4 SVM-------------------------------------------------------
+
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.datasets import load_iris
+from sklearn.model_selection import train_test_split
+from sklearn.svm import LinearSVC
+
+# Load Iris dataset
+iris = load_iris()
+
+# Split data into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(iris.data[:, :2], iris.target, test_size=0.2, random_state=42)
+
+# Train the SVM model
+svm = LinearSVC()
+svm.fit(X_train, y_train)
+
+# Plot the decision boundary
+plt.figure(figsize=(8,6))
+x_min, x_max = X_train[:, 0].min() - 1, X_train[:, 0].max() + 1
+y_min, y_max = X_train[:, 1].min() - 1, X_train[:, 1].max() + 1
+xx, yy = np.meshgrid(np.arange(x_min, x_max, 0.02), np.arange(y_min, y_max, 0.02))
+Z = svm.predict(np.c_[xx.ravel(), yy.ravel()])
+Z = Z.reshape(xx.shape)
+plt.contourf(xx, yy, Z, cmap=plt.cm.Paired, alpha=0.8)
+plt.scatter(X_train[:, 0], X_train[:, 1], c=y_train, cmap=plt.cm.Paired)
+plt.xlabel('Sepal length')
+plt.ylabel('Sepal width')
+plt.xlim(xx.min(), xx.max())
+plt.ylim(yy.min(), yy.max())
+plt.xticks(())
+plt.yticks(())
+plt.title('Linear SVM decision boundary on Iris dataset')
+plt.show()
+
+--------------------------------------------------exp8 implementation of single layer perceptron----------------------------------------------
+
+
+import numpy as np
+
+class Perceptron:
+    """Implements a perceptron network"""
+    def __init__(self, input_size, lr=0.1, epochs=10):
+        self.W = np.zeros(input_size+1)
+        # add one for bias
+        self.epochs = epochs
+        self.lr = lr
+   
+    def activation_fn(self, z):
+        return 1 if z >= 0 else -1
+
+    def predict(self, x):
+        z = self.W.T.dot(x)
+        a = self.activation_fn(z)
+        return a
+        
+    def fit(self, X, d):
+        for j in range(self.epochs):
+            for i in range(d.shape[0]):
+                x = np.insert(X[i], 0, 1)
+                y = self.predict(x)
+                e = d[i] - y
+                self.W = self.W + self.lr * e * x
+
+if __name__ == '__main__':
+    X = np.array([
+        [0, 0],
+        [0, 1],
+        [1, 0],
+        [1, 1]
+    ])
+    d = np.array([-1, -1, -1, 1])
+    perceptron = Perceptron(input_size=2)
+    perceptron.fit(X, d)
+    print(perceptron.W)
+
+------------------------------------------------------exp 9 error back propogation--------------------------------------------------
+# Import Libraries
+import numpy as np
+import pandas as pd
+from sklearn.datasets import load_iris
+from sklearn.model_selection import train_test_split
+import matplotlib.pyplot as plt
+
+
+data = load_iris()
+X=data.data
+y=data.target
+
+y = pd.get_dummies(y).values
+
+y[:3]
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=20, random_state=4)
+learning_rate = 0.1
+iterations = 6000
+N = y_train.size
+
+input_size = 4
+hidden_size = 2 
+output_size = 3  
+
+results = pd.DataFrame(columns=["mse", "accuracy"])
+np.random.seed(10)
+W1 = np.random.normal(scale=0.5, size=(input_size, hidden_size)) 
+print("W1=",W1)  
+
+W2 = np.random.normal(scale=0.5, size=(hidden_size , output_size)) 
+print("W2=",W2) 
+
+def sigmoid(x):
+    return 1 / (1 + np.exp(-x))
+
+def mean_squared_error(y_pred, y_true):
+    return ((y_pred - y_true)**2).sum() / (2*y_pred.size)
+    
+def accuracy(y_pred, y_true):
+    acc = y_pred.argmax(axis=1) == y_true.argmax(axis=1)
+    return acc.mean()
+
+for itr in range(iterations):    
+    
+    Z1 = np.dot(X_train, W1)
+    A1 = sigmoid(Z1)
+
+    Z2 = np.dot(A1, W2)
+    A2 = sigmoid(Z2)
+    
+    mse = mean_squared_error(A2, y_train)
+    acc = accuracy(A2, y_train)
+    results=results.append({"mse":mse, "accuracy":acc},ignore_index=True )
+    
+    E1 = A2 - y_train
+    dW1 = E1 * A2 * (1 - A2)
+
+    E2 = np.dot(dW1, W2.T)
+    dW2 = E2 * A1 * (1 - A1)
+
+    
+    W2_update = np.dot(A1.T, dW1) / N
+    W1_update = np.dot(X_train.T, dW2) / N
+
+    W2 = W2 - learning_rate * W2_update
+    W1 = W1 - learning_rate * W1_update
+
+Z1 = np.dot(X_test, W1)
+A1 = sigmoid(Z1)
+
+Z2 = np.dot(A1, W2)
+A2 = sigmoid(Z2)
+
+acc = accuracy(A2, y_test)
+print("Accuracy: {}".format(acc))
+
+------------------------------------------------exp 7  McCulloch-Pitts-------------------------------------------------
+import numpy as np
+
+def orGate(inputs):
+    weights = np.ones_like(inputs)
+    net = np.inner(inputs,weights)
+    if net >=1:
+        output = 1
+    else:
+        output = 0
+    return output
+
+def andGate(inputs):
+    weights = np.ones_like(inputs)
+    net = np.inner(inputs,weights)
+    threshold = inputs.shape[0]
+    if net >= threshold:
+        output = 1
+    else:
+        output = 0
+    return output
+
+print("OUTPUT FOR OR GATE")
+print("x1 x2 y")
+print("0 0 ", orGate(np.array([0,0])))
+print("0 1 ", orGate(np.array([0,1])))
+print("1 0 ", orGate(np.array([1,0])))
+print("1 1 ", orGate(np.array([1,1])))
+
+print("OUTPUT FOR AND GATE")
+print("x1 x2 y")
+print("0 0 ", andGate(np.array([0,0])))
+print("0 1 ", andGate(np.array([0,1])))
+print("1 0 ", andGate(np.array([1,0])))
+print("1 1 ", andGate(np.array([1,1])))
+
+-------------------------------------------------exp 5 hebbian learning AND OR XOR----------------------------------
+
+def hebbian_learning(samples):
+    print(f'{"INPUT":^8} {"TARGET":^16}{"WEIGHT CHANGES":^15}{"WEIGHTS":^25}')
+    w1, w2, b = 0, 0, 0
+    print(' ' * 45, f'({w1:2}, {w2:2}, {b:2})')
+    for x1, x2, y in samples:
+        w1 = w1 + x1 * y
+        w2 = w2 + x2 * y
+        b = b + y
+        print(f'({x1:2}, {x2:2}) {y:2} ({x1*y:2}, {x2*y:2}, {y:2}) ({w1:2}, {w2:2}, {b:2})')
+
+print('-', 'HEBBIAN LEARNING', '-')
+print('AND with Binary Input and Binary Output')
+hebbian_learning([[1, 1, 1], [1, 0, 0], [0, 1, 0], [0, 0, 0]])
+
+print('AND with Binary Input and Bipolar Output')
+hebbian_learning([[1, 1, 1], [1, 0, -1], [0, 1, -1], [0, 0, -1]])
+
+print('AND with Bipolar Input and Bipolar Output')
+hebbian_learning([[1, 1, 1], [1, -1, -1], [-1, 1, -1], [-1, -1, -1]])
+
+print('OR with Binary Input and Binary Output')
+hebbian_learning([[1, 1, 1], [1, 0, 1], [0, 1, 1], [0, 0, 0]])
+
+print('OR with Binary Input and Bipolar Output')
+hebbian_learning([[1, 1, 1], [1, 0, 1], [0, 1, 1], [0, 0, -1]])
+
+print('OR with Bipolar Input and Bipolar Output')
+hebbian_learning([[1, 1, 1], [1, -1, 1], [-1, 1, 1], [-1, -1, -1]])
+
+print('XOR with Binary Input and Binary Output')
+hebbian_learning([[1, 1, 0], [1, 0, 1], [0, 1, 1], [0, 0, 0]])
+
+print('XOR with Binary Input and Bipolar Output')
+hebbian_learning([[1, 1, -1], [1, 0, 1], [0, 1, 1], [0, 0, -1]])
+
+print('XOR with Bipolar Input and Bipolar Output')
+hebbian_learning([[1, 1, -1], [1, -1, 1], [-1, 1, 1], [-1, -1, -1]])
+
+--------------------------------------------------------------exp 10 principle component analysis in python with sci-kit learn---------------------------
+
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.decomposition import PCA
+from sklearn.datasets import load_iris
+
+# Load Iris dataset
+iris = load_iris()
+X = iris.data
+y = iris.target
+target_names = iris.target_names
+
+# Apply PCA
+pca = PCA(n_components=2)
+X_r = pca.fit_transform(X)
+
+# Plot results
+plt.figure()
+colors = ['navy', 'turquoise', 'darkorange']
+lw = 2
+
+for color, i, target_name in zip(colors, [0, 1, 2], target_names):
+    plt.scatter(X_r[y == i, 0], X_r[y == i, 1], color=color, alpha=.8, lw=lw,
+                label=target_name)
+plt.legend(loc='best', shadow=False, scatterpoints=1)
+plt.title('PCA of IRIS dataset')
+
+# Plot principal components
+plt.figure()
+plt.plot(pca.explained_variance_ratio_, 'o-', linewidth=2)
+plt.title('Scree Plot')
+plt.xlabel('Principal Component')
+plt.ylabel('Proportion of Variance Explained')
+plt.xticks(np.arange(len(pca.explained_variance_ratio_)), 
+           np.arange(1, len(pca.explained_variance_ratio_)+1))
+plt.show()
+
+-------------------------------------------------------------------exp 3 logestic regration-------------------------
